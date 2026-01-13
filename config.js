@@ -54,16 +54,6 @@ const CONFIG = {
       userAgent: 'chrome-desktop'
     },
     {
-      name: 'Reddit',
-      url: 'https://reddit.com',
-      icon: '🤖',
-      stayTime: 35000,
-      actions: ['scroll', 'wait', 'hover'],
-      weight: 7,
-      category: 'forum',
-      userAgent: 'chrome-desktop'
-    },
-    {
       name: 'Amazon',
       url: 'https://amazon.com',
       icon: '🛒',
