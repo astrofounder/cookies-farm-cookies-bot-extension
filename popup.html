@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cookies Farm Control</title>
+    <link rel="stylesheet" href="popup.css">
+</head>
+
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>🍪 Cookies Farm</h1>
+            <p class="subtitle">Warm Up Profile Anti-Detect</p>
+        </header>
+
+        <main class="main">
+            <!-- Status Section -->
+            <section class="status-section">
+                <div class="status-card">
+                    <div class="status-indicator" id="statusIndicator">
+                        <span class="status-dot" id="statusDot"></span>
+                        <span class="status-text" id="statusText">Stopped</span>
+                    </div>
+                    <div class="current-website" id="currentWebsite">
+                        <small>Current: None</small>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Control Buttons -->
+            <section class="control-section">
+                <button id="startBtn" class="btn btn-primary">
+                    <span class="btn-icon">▶️</span>
+                    Start Farming
+                </button>
+                <button id="stopBtn" class="btn btn-secondary" disabled>
+                    <span class="btn-icon">⏹️</span>
+                    Stop Farming
+                </button>
+            </section>
+
+            <!-- Settings Section -->
+            <section class="settings-section">
+                <h3>Settings</h3>
+
+                <div class="setting-item checkbox-item">
+                    <input type="checkbox" id="autoStartToggle" checked>
+                    <label for="autoStartToggle">Auto-start on browser open</label>
+                </div>
+
+                <div class="setting-item">
+                    <label for="delayRange">Delay between websites (seconds)</label>
+                    <div class="range-container">
+                        <input type="range" id="delayRange" min="5" max="30" value="10" class="range-input">
+                        <span id="delayValue" class="range-value">10s</span>
+                    </div>
+                </div>
+
+                <div class="setting-item">
+                    <label for="stayTimeRange">Stay time per website (seconds)</label>
+                    <div class="range-container">
+                        <input type="range" id="stayTimeRange" min="20" max="120" value="45" class="range-input">
+                        <span id="stayTimeValue" class="range-value">45s</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Statistics Section -->
+            <section class="stats-section">
+                <h3>Statistics</h3>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <span class="stat-label">Websites Visited</span>
+                        <span class="stat-value" id="websitesVisited">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Total Time</span>
+                        <span class="stat-value" id="totalTime">0m</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Session Start</span>
+                        <span class="stat-value" id="sessionStart">--:--</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Website List Section -->
+            <section class="websites-section">
+                <h3>Target Websites</h3>
+                <div class="website-list" id="websiteList">
+                    <!-- Will be populated by JavaScript -->
+                </div>
+            </section>
+        </main>
+
+        <footer class="footer">
+            <button id="resetBtn" class="btn btn-outline">Reset Statistics</button>
+            <button id="exportBtn" class="btn btn-outline">Export Logs</button>
+        </footer>
+    </div>
+
+    <script src="config.js"></script>
+    <script src="popup.js"></script>
+</body>
+
+</html>
