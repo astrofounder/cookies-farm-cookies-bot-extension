@@ -123,6 +123,41 @@ section h3 {
     opacity: 0.9;
 }
 
+/* Progress Bar */
+.progress-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.progress-bar {
+    flex: 1;
+    height: 8px;
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 4px;
+    overflow: hidden;
+    position: relative;
+}
+
+.progress-bar::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: var(--progress, 0%);
+    background: linear-gradient(90deg, #10b981, #34d399);
+    border-radius: 4px;
+    transition: width 0.3s ease;
+}
+
+.progress-text {
+    font-size: 11px;
+    font-weight: 600;
+    min-width: 30px;
+}
+
 /* Button Styles */
 .btn {
     display: flex;
@@ -168,6 +203,17 @@ section h3 {
     background: #dc2626;
     transform: translateY(-2px);
     box-shadow: 0 6px 12px rgba(239, 68, 68, 0.4);
+}
+
+.btn-warning {
+    background: #f59e0b;
+    color: white;
+}
+
+.btn-warning:hover:not(:disabled) {
+    background: #d97706;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(245, 158, 11, 0.4);
 }
 
 .btn-outline {
@@ -269,6 +315,7 @@ section h3 {
     border-radius: 3px;
     outline: none;
     -webkit-appearance: none;
+    appearance: none;
 }
 
 .range-input::-webkit-slider-thumb {
@@ -459,4 +506,50 @@ section h3 {
         transform: translateY(0);
         opacity: 1;
     }
+}
+
+/* Dark Mode Theme */
+body.dark-mode {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+}
+
+body.dark-mode .header,
+body.dark-mode section,
+body.dark-mode .footer {
+    background: rgba(30, 30, 50, 0.95);
+    color: #e2e8f0;
+}
+
+body.dark-mode .header h1,
+body.dark-mode section h3 {
+    color: #e2e8f0;
+}
+
+body.dark-mode .subtitle,
+body.dark-mode .stat-label,
+body.dark-mode .setting-item label {
+    color: #a0aec0;
+}
+
+body.dark-mode .stat-item,
+body.dark-mode .website-item {
+    background: rgba(45, 45, 70, 0.8);
+}
+
+body.dark-mode .stat-value,
+body.dark-mode .website-url {
+    color: #e2e8f0;
+}
+
+body.dark-mode .btn-outline {
+    color: #a0aec0;
+    border-color: #4a5568;
+}
+
+body.dark-mode .btn-outline:hover {
+    background: rgba(74, 85, 104, 0.3);
+}
+
+body.dark-mode .checkbox-item label {
+    color: #a0aec0;
 }

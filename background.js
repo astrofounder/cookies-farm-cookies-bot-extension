@@ -7,6 +7,7 @@ try {
 // State management
 let currentState = {
   isRunning: false,
+  isPaused: false,
   currentWebsiteIndex: 0,
   currentTabId: null,
   visitedWebsites: []
@@ -23,6 +24,35 @@ chrome.storage.local.get(['isRunning', 'currentWebsiteIndex', 'activeTabId', 'vi
 // Helper for random delay
 function randomDelay(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+// Simulate tab switching (multitasking behavior)
+async function simulateTabSwitch() {
+  // Only trigger occasionally (20% chance)
+  if (Math.random() > 0.2) return;
+
+  try {
+    console.log('Simulating tab switch (multitasking)...');
+
+    // Create a dummy tab briefly
+    const dummyTab = await chrome.tabs.create({
+      url: 'about:blank',
+      active: true
+    });
+
+    // Wait random time (1-3 seconds)
+    await new Promise(resolve => setTimeout(resolve, randomDelay(1000, 3000)));
+
+    // Close dummy tab
+    await chrome.tabs.remove(dummyTab.id);
+
+    // Focus back on farming tab
+    if (currentState.currentTabId) {
+      await chrome.tabs.update(currentState.currentTabId, { active: true });
+    }
+  } catch (e) {
+    console.log('Tab switch simulation skipped:', e.message);
+  }
 }
 
 // Helper for Safe Tab Closing (Anti-Suicide)
@@ -72,7 +102,8 @@ async function startCookiesFarming() {
 async function stopCookiesFarming() {
   console.log('Stopping Cookies Farming...');
   currentState.isRunning = false;
-  await chrome.storage.local.set({ isRunning: false });
+  currentState.isPaused = false;
+  await chrome.storage.local.set({ isRunning: false, isPaused: false });
 
   chrome.alarms.clear('farming_loop');
   chrome.alarms.clear('tab_timeout');
@@ -83,6 +114,25 @@ async function stopCookiesFarming() {
     currentState.currentTabId = null;
     await chrome.storage.local.remove('activeTabId');
   }
+}
+
+// Pause farming
+async function pauseCookiesFarming() {
+  if (!currentState.isRunning || currentState.isPaused) return;
+  console.log('Pausing Cookies Farming...');
+  currentState.isPaused = true;
+  await chrome.storage.local.set({ isPaused: true });
+  chrome.alarms.clear('farming_loop');
+  chrome.alarms.clear('open_next_site');
+}
+
+// Resume farming
+async function resumeCookiesFarming() {
+  if (!currentState.isRunning || !currentState.isPaused) return;
+  console.log('Resuming Cookies Farming...');
+  currentState.isPaused = false;
+  await chrome.storage.local.set({ isPaused: false });
+  chrome.alarms.create('open_next_site', { when: Date.now() + 100 });
 }
 
 // Navigate to next website
@@ -207,6 +257,9 @@ async function browseToNextWebsite() {
     // Safety timeout to close tab if it hangs
     chrome.alarms.create('tab_timeout', { when: Date.now() + (finalStayTime + 30000) });
 
+    // Occasionally simulate tab switching (multitasking)
+    setTimeout(() => simulateTabSwitch(), randomDelay(5000, 15000));
+
   } catch (error) {
     console.error('Error in browsing loop:', error);
     // Retry shortly if something failed
@@ -316,8 +369,21 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     case 'getStatus':
       sendResponse({
         isRunning: currentState.isRunning,
-        currentWebsite: currentState.isRunning ? (CONFIG.WEBSITES[currentState.currentWebsiteIndex]?.url || 'None') : 'Ready to Start'
+        isPaused: currentState.isPaused,
+        currentWebsite: currentState.isRunning ? (CONFIG.WEBSITES[currentState.currentWebsiteIndex]?.url || 'None') : 'Ready to Start',
+        progress: {
+          current: currentState.currentWebsiteIndex,
+          total: CONFIG.WEBSITES.length
+        }
       });
+      break;
+    case 'pause':
+      pauseCookiesFarming();
+      sendResponse({ status: 'paused' });
+      break;
+    case 'resume':
+      resumeCookiesFarming();
+      sendResponse({ status: 'resumed' });
       break;
     case 'updateSettings':
       if (request.settings) {

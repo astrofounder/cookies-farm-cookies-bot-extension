@@ -2,7 +2,9 @@
 class PopupController {
   constructor() {
     this.isRunning = false;
+    this.isPaused = false;
     this.currentWebsite = 'None';
+    this.progress = { current: 0, total: 0 };
     this.statistics = {
       websitesVisited: 0,
       totalTime: 0,
@@ -31,15 +33,19 @@ class PopupController {
     this.statusDot = document.getElementById('statusDot');
     this.statusText = document.getElementById('statusText');
     this.currentWebsiteEl = document.getElementById('currentWebsite');
+    this.progressBar = document.getElementById('progressBar');
+    this.progressText = document.getElementById('progressText');
 
     // Control buttons
     this.startBtn = document.getElementById('startBtn');
+    this.pauseBtn = document.getElementById('pauseBtn');
     this.stopBtn = document.getElementById('stopBtn');
     this.resetBtn = document.getElementById('resetBtn');
     this.exportBtn = document.getElementById('exportBtn');
 
     // Settings
     this.autoStartToggle = document.getElementById('autoStartToggle');
+    this.darkModeToggle = document.getElementById('darkModeToggle');
     this.delayRange = document.getElementById('delayRange');
     this.delayValue = document.getElementById('delayValue');
     this.stayTimeRange = document.getElementById('stayTimeRange');
@@ -57,12 +63,14 @@ class PopupController {
   bindEvents() {
     // Control buttons
     this.startBtn.addEventListener('click', () => this.startFarming());
+    this.pauseBtn.addEventListener('click', () => this.togglePause());
     this.stopBtn.addEventListener('click', () => this.stopFarming());
     this.resetBtn.addEventListener('click', () => this.resetStatistics());
     this.exportBtn.addEventListener('click', () => this.exportLogs());
 
     // Settings
     this.autoStartToggle.addEventListener('change', () => this.saveSettings());
+    this.darkModeToggle.addEventListener('change', () => this.toggleDarkMode());
     this.delayRange.addEventListener('input', () => this.updateDelayDisplay());
     this.stayTimeRange.addEventListener('input', () => this.updateStayTimeDisplay());
 
@@ -74,16 +82,26 @@ class PopupController {
   async loadSettings() {
     try {
       const settings = await chrome.storage.local.get([
-        'autoStart', 'delayBetweenWebsites', 'stayTimePerWebsite',
+        'autoStart', 'darkMode', 'delayBetweenWebsites', 'stayTimePerWebsite',
         'statistics', 'visitedWebsites'
       ]);
 
       this.autoStartToggle.checked = settings.autoStart !== false;
+      this.darkModeToggle.checked = settings.darkMode === true;
       this.delayRange.value = settings.delayBetweenWebsites || 10;
       this.stayTimeRange.value = settings.stayTimePerWebsite || 45;
 
+      // Apply dark mode if saved
+      if (settings.darkMode) {
+        document.body.classList.add('dark-mode');
+      }
+
       if (settings.statistics) {
         this.statistics = settings.statistics;
+        // Fix: Parse sessionStart from string to Date object
+        if (this.statistics.sessionStart && typeof this.statistics.sessionStart === 'string') {
+          this.statistics.sessionStart = new Date(this.statistics.sessionStart);
+        }
       }
 
       if (settings.visitedWebsites) {
@@ -130,7 +148,9 @@ class PopupController {
     try {
       const response = await chrome.runtime.sendMessage({ action: 'getStatus' });
       this.isRunning = response.isRunning;
+      this.isPaused = response.isPaused || false;
       this.currentWebsite = response.currentWebsite;
+      this.progress = response.progress || { current: 0, total: 0 };
 
       this.updateUI();
     } catch (error) {
@@ -141,8 +161,12 @@ class PopupController {
   updateUI() {
     if (this.isRunning) {
       this.statusDot.classList.add('active');
-      this.statusText.textContent = 'Running';
+      this.statusText.textContent = this.isPaused ? 'Paused' : 'Running';
       this.startBtn.disabled = true;
+      this.pauseBtn.disabled = false;
+      this.pauseBtn.innerHTML = this.isPaused
+        ? '<span class="btn-icon">▶️</span> Resume'
+        : '<span class="btn-icon">⏸️</span> Pause';
       this.stopBtn.disabled = false;
 
       if (this.statistics.sessionStart === null) {
@@ -153,8 +177,17 @@ class PopupController {
       this.statusDot.classList.remove('active');
       this.statusText.textContent = 'Stopped';
       this.startBtn.disabled = false;
+      this.pauseBtn.disabled = true;
+      this.pauseBtn.innerHTML = '<span class="btn-icon">⏸️</span> Pause';
       this.stopBtn.disabled = true;
     }
+
+    // Update progress bar
+    const progressPercent = this.progress.total > 0
+      ? Math.round((this.progress.current / this.progress.total) * 100)
+      : 0;
+    this.progressBar.style.setProperty('--progress', `${progressPercent}%`);
+    this.progressText.textContent = `${this.progress.current}/${this.progress.total}`;
 
     this.currentWebsiteEl.innerHTML = `<small>Current: ${this.currentWebsite}</small>`;
     this.updateStatisticsDisplay();
@@ -187,6 +220,26 @@ class PopupController {
       console.error('Error stopping farming:', error);
       this.showNotification('Failed to stop farming', 'error');
     }
+  }
+
+  async togglePause() {
+    try {
+      const action = this.isPaused ? 'resume' : 'pause';
+      const response = await chrome.runtime.sendMessage({ action });
+      if (response.status === 'paused' || response.status === 'resumed') {
+        this.isPaused = !this.isPaused;
+        this.updateUI();
+        this.showNotification(`Farming ${this.isPaused ? 'paused' : 'resumed'}`, 'info');
+      }
+    } catch (error) {
+      console.error('Error toggling pause:', error);
+    }
+  }
+
+  toggleDarkMode() {
+    const isDark = this.darkModeToggle.checked;
+    document.body.classList.toggle('dark-mode', isDark);
+    chrome.storage.local.set({ darkMode: isDark });
   }
 
   async resetStatistics() {
@@ -360,18 +413,22 @@ class PopupController {
 }
 
 // Initialize popup when DOM is loaded
+let popupController = null;
 document.addEventListener('DOMContentLoaded', () => {
-  new PopupController();
+  popupController = new PopupController();
+  window.popupController = popupController;
 });
 
 // Listen for messages from background script
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'websiteVisited') {
     // Update visited status
-    const website = popupController.targetWebsites.find(w => w.url === request.url);
-    if (website) {
-      website.visited = true;
-      popupController.renderWebsiteList();
+    if (window.popupController) {
+      const website = window.popupController.targetWebsites.find(w => w.url === request.url);
+      if (website) {
+        website.visited = true;
+        window.popupController.renderWebsiteList();
+      }
     }
   }
 });

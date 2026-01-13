@@ -10,35 +10,48 @@ class HumanBehaviorSimulator {
     return Math.floor(Math.random() * (max - min + 1)) + min;
   }
 
-  // Fungsi untuk random mouse movement
-  randomMouseMove() {
-    const startX = window.innerWidth / 2;
-    const startY = window.innerHeight / 2;
+  // Fungsi untuk random mouse movement (enhanced with trail)
+  async randomMouseMove() {
+    const startX = Math.random() * window.innerWidth;
+    const startY = Math.random() * window.innerHeight;
     const endX = Math.random() * window.innerWidth;
     const endY = Math.random() * window.innerHeight;
 
-    const steps = 10;
-    let currentStep = 0;
+    const steps = this.randomDelay(15, 30); // More steps for smoother trail
 
-    const moveInterval = setInterval(() => {
-      if (currentStep >= steps) {
-        clearInterval(moveInterval);
-        return;
-      }
+    for (let i = 0; i <= steps; i++) {
+      const progress = i / steps;
+      // Add slight curve using easing
+      const easedProgress = progress < 0.5
+        ? 2 * progress * progress
+        : 1 - Math.pow(-2 * progress + 2, 2) / 2;
 
-      const progress = currentStep / steps;
-      const x = startX + (endX - startX) * progress;
-      const y = startY + (endY - startY) * progress;
+      const x = startX + (endX - startX) * easedProgress;
+      const y = startY + (endY - startY) * easedProgress;
+
+      // Add small random jitter for realism
+      const jitterX = x + (Math.random() - 0.5) * 5;
+      const jitterY = y + (Math.random() - 0.5) * 5;
 
       const event = new MouseEvent('mousemove', {
-        clientX: x,
-        clientY: y,
+        clientX: jitterX,
+        clientY: jitterY,
         bubbles: true
       });
 
       document.dispatchEvent(event);
-      currentStep++;
-    }, this.randomDelay(50, 150));
+      await this.delay(this.randomDelay(10, 50));
+    }
+  }
+
+  // Simulate mouse trail before important actions
+  async simulateMouseTrail() {
+    // Multiple random movements to simulate human browsing
+    const movements = this.randomDelay(2, 4);
+    for (let i = 0; i < movements; i++) {
+      await this.randomMouseMove();
+      await this.delay(this.randomDelay(100, 500));
+    }
   }
 
   // Fungsi untuk scroll halaman

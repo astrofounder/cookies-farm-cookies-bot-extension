@@ -26,6 +26,11 @@
                     <div class="current-website" id="currentWebsite">
                         <small>Current: None</small>
                     </div>
+                    <!-- Progress Bar -->
+                    <div class="progress-container">
+                        <div class="progress-bar" id="progressBar"></div>
+                        <span class="progress-text" id="progressText">0/0</span>
+                    </div>
                 </div>
             </section>
 
@@ -34,6 +39,10 @@
                 <button id="startBtn" class="btn btn-primary">
                     <span class="btn-icon">▶️</span>
                     Start Farming
+                </button>
+                <button id="pauseBtn" class="btn btn-warning" disabled>
+                    <span class="btn-icon">⏸️</span>
+                    Pause
                 </button>
                 <button id="stopBtn" class="btn btn-secondary" disabled>
                     <span class="btn-icon">⏹️</span>
@@ -48,6 +57,11 @@
                 <div class="setting-item checkbox-item">
                     <input type="checkbox" id="autoStartToggle" checked>
                     <label for="autoStartToggle">Auto-start on browser open</label>
+                </div>
+
+                <div class="setting-item checkbox-item">
+                    <input type="checkbox" id="darkModeToggle">
+                    <label for="darkModeToggle">Dark Mode</label>
                 </div>
 
                 <div class="setting-item">
